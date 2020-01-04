@@ -7,6 +7,10 @@ from beem.account import Account
 from beem.amount import Amount
 from beem.nodelist import NodeList
 
+# Ignore internal testing accounts
+ignored_accounts = ["travelfeedio", "tftest17",
+                    "tfawesome", "testytest", "testcat"]
+
 nl = NodeList()
 nl.update_nodes()
 node_list = nl.get_nodes()
@@ -20,7 +24,7 @@ delegations = account.get_vesting_delegations()
 
 for d in delegations:
     # Only check delegations made more than a week ago
-    if datetime.datetime.strptime(d['min_delegation_time'], '%Y-%m-%dT%H:%M:%S') < (datetime.datetime.utcnow() - datetime.timedelta(days=7)):
+    if datetime.datetime.strptime(d['min_delegation_time'], '%Y-%m-%dT%H:%M:%S') < (datetime.datetime.utcnow() - datetime.timedelta(days=7)) and not d.get('delegatee') in ignored_accounts:
         vests_delegated = d.get('vesting_shares')
         delegatee = d.get('delegatee')
         acc = Account(delegatee, steem_instance=stm)
@@ -30,14 +34,21 @@ for d in delegations:
         # Get TravelFeed posts of account
         history = acc.history_reverse(only_ops=['comment'])
         for h in history:
-            meta = json.loads(h.get('json_metadata', '{}'))
-            app = meta.get('app', '').split('/')[0]
-            if app == "travelfeed":
-                posts += [datetime.datetime.strptime(
-                    h['timestamp'], '%Y-%m-%dT%H:%M:%S')]
+            try:
+                meta = json.loads(h.get('json_metadata', {}))
+                app = meta.get('app', '').split('/')[0]
+                if app == "travelfeed":
+                    posts += [datetime.datetime.strptime(
+                        h['timestamp'], '%Y-%m-%dT%H:%M:%S')]
+            except:
+                print("Error when processing post...")
         # Set goal SP based on how active the account is
         for d in posts:
-            if d > (datetime.datetime.utcnow() - datetime.timedelta(days=28)):
+            if d > (datetime.datetime.utcnow() - datetime.timedelta(days=7)):
+                goal = 25
+            elif d > (datetime.datetime.utcnow() - datetime.timedelta(days=14)):
+                goal = 20
+            elif d > (datetime.datetime.utcnow() - datetime.timedelta(days=28)):
                 goal = 15
             elif goal is 0 and d > (datetime.datetime.utcnow() - datetime.timedelta(days=56)):
                 goal = 10
