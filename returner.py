@@ -44,7 +44,9 @@ for d in delegations:
                 print("Error when processing post...")
         # Set goal SP based on how active the account is
         for d in posts:
-            if d > (datetime.datetime.utcnow() - datetime.timedelta(days=7)):
+            if d > (datetime.datetime.utcnow() - datetime.timedelta(days=3)):
+                goal = 35
+            elif d > (datetime.datetime.utcnow() - datetime.timedelta(days=7)):
                 goal = 25
             elif d > (datetime.datetime.utcnow() - datetime.timedelta(days=14)):
                 goal = 20
